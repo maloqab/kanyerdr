@@ -74,7 +74,7 @@ sidebar uses it to show branches.
 Ask the coding agent in Herdr:
 
 ```text
-Read ~/.config/herdr-app/AGENTS.md, then add this layout: herdr.dev/layouts/maloqab/kanyerdr--kanyerdr
+Read ~/.config/herdr-app/AGENTS.md, then add this layout: https://github.com/maloqab/kanyerdr/tree/main/kanyerdr
 ```
 
 It reads [`kanyerdr/RECIPE.md`](kanyerdr/RECIPE.md), tells you what the mods run,
