@@ -10,7 +10,7 @@
 # sandbox's shells, and deleted on exit. It is never written into the repo.
 #
 # Four demo spaces (api, web, docs, infra) are dealt the four worlds in order.
-# Each has a split tab: a shell on the left, Claude Code on the right.
+# Each has one terminal running Claude Code.
 set -euo pipefail
 
 root=$(cd "$(dirname "$0")/.." && pwd)
@@ -72,7 +72,6 @@ cat > "$box/zdot/extra.zsh" <<EOF
 export DISABLE_AUTOUPDATER=1
 [ -f "$short/key" ] && export ANTHROPIC_API_KEY="\$(cat "$short/key")"
 . "$root/kanyerdr/claude-code/shell/kanyerdr.zsh"
-palette() { for i in {0..15}; do printf '\e[48;5;%sm   \e[0m' \$i; [ \$i = 7 ] && echo; done; echo; }
 EOF
 # Claude Code: past first-run, the key approved, the demo folders trusted.
 KEY_TAIL="${ANTHROPIC_API_KEY: -20}" node -e '
@@ -88,21 +87,16 @@ SANDBOX_HOME="$demo" "$root/dev/sandbox.sh" start $name >/dev/null
 frames
 app do layout.switch '{"name":"study-hall"}' >/dev/null
 
-# --- spaces: shell left, Claude Code right -----------------------------------
-declare -A CLAUDE_T CLAUDE_P SHELL_T SPACE_ID
+# --- spaces: one terminal each, running Claude Code --------------------------
+declare -A CLAUDE_T SPACE_ID
 for i in 0 1 2 3; do
   s=${SPACES[$i]}
   SPACE_ID[$s]=$(app do space.new "{\"name\":\"$s\",\"folder\":\"$demo/$s\"}" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).space))')
   frames
-  SHELL_T[$s]=$(core ls --json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const t=JSON.parse(s).terminals.filter(t=>t.where.startsWith(process.argv[1]+" /"));console.log(t[t.length-1].address)})' "$s")
-  app do pane.split '{"direction":"right"}' >/dev/null
-  frames
-  CLAUDE_P[$s]=$(status focused_pane)
   CLAUDE_T[$s]=$(core ls --json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const t=JSON.parse(s).terminals.filter(t=>t.where.startsWith(process.argv[1]+" /"));console.log(t[t.length-1].address)})' "$s")
 done
 frames
 for s in "${SPACES[@]}"; do
-  core send "${SHELL_T[$s]}" "clear; git log --oneline --decorate; echo; ls -G; echo; palette" >/dev/null
   core send "${CLAUDE_T[$s]}" "clear; claude" >/dev/null
 done
 sleep 8
@@ -111,7 +105,7 @@ for s in "${SPACES[@]}"; do core send "${CLAUDE_T[$s]}" "$PROMPT_TEXT" >/dev/nul
 for s in "${SPACES[@]}"; do core wait "${CLAUDE_T[$s]}" >/dev/null 2>&1 || true; done
 frames
 
-{ for s in "${SPACES[@]}"; do echo "$s space=${SPACE_ID[$s]} shell=${SHELL_T[$s]} claude=${CLAUDE_T[$s]} pane=${CLAUDE_P[$s]}"; done; } > "$short/map.txt"
+{ for s in "${SPACES[@]}"; do echo "$s space=${SPACE_ID[$s]} claude=${CLAUDE_T[$s]}"; done; } > "$short/map.txt"
 if [ -n "$setup_only" ]; then
   echo "set up; sandbox $name left running. Map: $short/map.txt"
   exit 0
@@ -132,12 +126,8 @@ for i in 0 1 2 3; do
   app shot "$short/$w.png" >/dev/null
   scale=$(( $(magick identify -format '%w' "$short/$w.png") / 1600 ))
   magick "$short/$w.png" -resize 2000x -strip "$out/$w.png"
-  # Claude Code on its own: zoom its pane, keep the world's frame around it.
-  app do pane.zoom "{\"pane\":\"${CLAUDE_P[$s]}\"}" >/dev/null
-  frames
-  app shot "$short/$w-zoom.png" >/dev/null
-  app do pane.zoom "{\"pane\":\"${CLAUDE_P[$s]}\"}" >/dev/null
-  magick "$short/$w-zoom.png" -crop "$((1326 * scale))x$((888 * scale))+$((274 * scale))+$((38 * scale))" +repage \
+  # Claude Code on its own: the world's frame and the pane, without the sidebar.
+  magick "$short/$w.png" -crop "$((1326 * scale))x$((888 * scale))+$((274 * scale))+$((38 * scale))" +repage \
     -resize 1600x -strip "$out/$w-claude.png"
 done
 
@@ -151,11 +141,12 @@ app shot "$short/menu.png" >/dev/null
 app do overlay.close '{"id":"world-menu"}' >/dev/null
 magick "$short/menu.png" -crop "$((300 * scale))x$((330 * scale))+0+0" +repage -resize 600x -strip "$out/world-menu.png"
 
-# The gallery card: the four worlds in a 2x2 grid.
+# All four worlds in a 2x2 grid, then the gallery card (dev/card.html) from these shots.
 tile() { magick "$out/$1.png" -resize 1000x -bordercolor '#0d0d0d' -border 8 "$short/tile-$1.png"; }
 for w in "${WORLDS[@]}"; do tile "$w"; done
 magick \( "$short/tile-study-hall.png" "$short/tile-the-palace.png" +append \) \
   \( "$short/tile-launch-pad.png" "$short/tile-cold-room.png" +append \) -append \
-  -bordercolor '#0d0d0d' -border 8 -strip "$root/kanyerdr/preview.png"
+  -bordercolor '#0d0d0d' -border 8 -strip "$out/all-worlds.png"
+"$root/dev/card.sh"
 
 ls -l "$out" "$root/kanyerdr/preview.png"

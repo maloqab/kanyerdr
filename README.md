@@ -3,7 +3,7 @@
 Four [Herdr](https://herdr.dev) layouts that change with the space you're in, each
 one inspired by one of Kanye West's first four albums.
 
-![The four worlds side by side: Study Hall, The Palace, Launch Pad and Cold Room](kanyerdr/preview.png)
+![kanyerdr: four worlds, one for every space. The Palace with its World menu open, and Study Hall, Launch Pad and Cold Room below](kanyerdr/preview.png)
 
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 [![Herdr 0.1.16](https://img.shields.io/badge/Herdr-0.1.16-8a2be2)](https://herdr.dev)
