@@ -1,0 +1,4 @@
+#!/bin/sh
+# Fake hc: prints $FAKE_HC_JSON, or fails with $FAKE_HC_EXIT.
+[ -n "${FAKE_HC_EXIT:-}" ] && exit "$FAKE_HC_EXIT"
+printf '%s\n' "${FAKE_HC_JSON:-{\}}"

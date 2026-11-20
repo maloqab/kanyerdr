@@ -1,0 +1,7 @@
+*.error
+gpui-kit.d.ts
+herdr.d.ts
+.DS_Store
+dev/.sandbox*/
+.superpowers/
+dev/.private-patterns
